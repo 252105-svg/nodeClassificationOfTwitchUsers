@@ -6,8 +6,29 @@ from sklearn.metrics import classification_report
 from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
 
+def plot_degree_distribution(G):
+    print("\n--- Step 3: Degree Distribution Analysis ---")
+    degrees = [G.degree(n) for n in G.nodes()]
+    plt.figure(figsize=(8, 5))
+    plt.hist(degrees, bins=range(min(degrees), max(degrees) + 2), color='purple', alpha=0.7, edgecolor='black')
+    plt.title("Node Degree Distribution")
+    plt.xlabel("Degree (Number of Connections)")
+    plt.ylabel("Count of Nodes")
+    plt.savefig("degree_distribution.png")
+    print("Degree distribution plot saved. Close window to continue...")
+    plt.show()
+
+def explain_model(model):
+    print("\n--- Step 7: Explaining the Model")
+    if hasattr(model, 'feature_importances_'):
+        print("\n--- Step 11: Feature Importance (Explainable AI) ---")
+        importances = model.feature_importances_
+        feature_names = ['degree', 'pagerank', 'clustering']
+        for name, imp in zip(feature_names, importances):
+            print(f"{name.title()}: {imp:.4f}")
+
 def visualize_network(G, df):
-    print("\n--- Step 7: Visualizing the Network ---")
+    print("\n--- Step 10: Visualizing the Network ---")
     plt.figure(figsize=(12, 8))
     
     pos = nx.spring_layout(G, seed=42)
@@ -19,13 +40,16 @@ def visualize_network(G, df):
     plt.savefig("network_visualization.png")
     print("Graph saved as 'network_visualization.png'")
 
+    print("Opening visualization window...")
+    plt.show()
+
 def print_leaderboard(df):
-    print("\n--- Step 8: Influence Leaderboard (Top 5) ---")
+    print("\n--- Step 9: Influence Leaderboard (Top 5) ---")
     leaderboard = df.sort_values(by='pagerank', ascending=False).head(5)
     print(leaderboard[['node', 'pagerank', 'actual_name']])
 
 def compare_models(df):
-    print("\n--- Step 9: Comparative Model Analysis ---")
+    print("\n--- Step 6: Comparative Model Analysis ---")
     X = df[['degree', 'pagerank', 'clustering']]
     y = df['target']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
@@ -44,7 +68,7 @@ def compare_models(df):
     return rf if rf_score >= lr_score else lr
 
 def get_predictions(df, model):
-    print("\n--- Step 5: Generating Predictions ---")
+    print("\n--- Step 8: Generating Predictions ---")
     X = df[['degree', 'pagerank', 'clustering']]
     df['predicted_club'] = model.predict(X)
     
@@ -57,7 +81,7 @@ def get_predictions(df, model):
     return df
 
 def find_communities(G):
-    print("\n--- Step 6: Community Detection ---")
+    print("\n--- Step 4: Community Detection ---")
     communities = nx.community.louvain_communities(G, seed=42)
     print(f"Detected {len(communities)} distinct communities within the club.")
     for i, comm in enumerate(communities):
@@ -88,7 +112,7 @@ def load_data():
     return G
 
 def extract_features(G):
-    print("Step 3: Extracting structural features...")
+    print("Step 5: Extracting structural features...")
     degree = nx.degree_centrality(G)      
     pagerank = nx.pagerank(G)            
     clustering = nx.clustering(G)        
@@ -121,10 +145,20 @@ def train_influence_model(df):
 if __name__ == "__main__":
     graph = load_data()
     analyze_topology(graph)
+    plot_degree_distribution(graph)
+    find_communities(graph)
+    
     features_df = extract_features(graph)
-    model = train_influence_model(features_df)
-    final_results = get_predictions(features_df, model)
-    print("\n--- Final Prediction Table (Head) ---")
-    print(final_results[['node', 'actual_name', 'predicted_name', 'is_correct']].head(50))
+    
+    best_model = compare_models(features_df)
+    
+    # 4. Explanation
+    explain_model(best_model)
+    
+    final_results = get_predictions(features_df, best_model)
+    
+    print("\n--- Final Prediction Table (All Nodes) ---")
+    print(final_results[['node', 'actual_name', 'predicted_name', 'is_correct']].head(34))
+    
     print_leaderboard(final_results)
     visualize_network(graph, final_results)
