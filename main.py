@@ -5,6 +5,39 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+def check_robustness(G):
+    print("\n--- STEP 13: Network Robustness Test ---")
+    G_temp = G.copy()
+    
+    most_connected = max(G.degree, key=lambda x: x[1])[0]
+    G_temp.remove_node(most_connected)
+    
+    is_connected = nx.is_connected(G_temp)
+    num_components = nx.number_connected_components(G_temp)
+    
+    print(f"If we remove Node {most_connected} (The Hub):")
+    print(f"Is the network still connected? {is_connected}")
+    print(f"Number of disconnected groups: {num_components}")
+
+def analyze_centrality_correlation(df):
+    print("\n--- STEP 11: Centrality Correlation Analysis ---")
+    correlation = df[['degree', 'pagerank', 'clustering']].corr()
+    print("Correlation Matrix:")
+    print(correlation)
+    
+    print("\nInsight: Highly correlated metrics suggest redundant social roles.")
+
+def find_bridges(G):
+    print("\n--- STEP 12: Detecting Structural Bridges (Betweenness) ---")
+    betweenness = nx.betweenness_centrality(G)
+    sorted_betweenness = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)
+    
+    print("Top 3 Structural Bridges (Nodes that connect different groups):")
+    for node, score in sorted_betweenness[:3]:
+        role = G.nodes[node]['club']
+        print(f"Node {node} ({role}): {score:.4f}")
 
 def plot_degree_distribution(G):
     print("\n--- Step 3: Degree Distribution Analysis ---")
@@ -162,3 +195,8 @@ if __name__ == "__main__":
     
     print_leaderboard(final_results)
     visualize_network(graph, final_results)
+
+    find_bridges(graph)
+    analyze_centrality_correlation(final_results)
+
+    check_robustness(graph)
