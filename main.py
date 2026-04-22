@@ -4,6 +4,24 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 
+def analyze_topology(G):
+    print("\n--- Step 2: Global Topology Analysis ---")
+    
+    density = nx.density(G)
+    avg_clustering = nx.average_clustering(G)
+    
+    random_G = nx.gnm_random_graph(G.number_of_nodes(), G.number_of_edges())
+    random_clustering = nx.average_clustering(random_G)
+    
+    print(f"Graph Density: {density:.4f}")
+    print(f"Average Clustering Coefficient: {avg_clustering:.4f}")
+    print(f"Random Graph Clustering (Baseline): {random_clustering:.4f}")
+    
+    if avg_clustering > random_clustering:
+        print("Insight: This network shows 'Small World' properties (High Clustering).")
+    else:
+        print("Insight: This network behaves like a random graph.")
+
 def load_data():
     print("Step 1: Loading Internal Karate Club Data...")
     G = nx.karate_club_graph()
@@ -11,7 +29,7 @@ def load_data():
     return G
 
 def extract_features(G):
-    print("Step 2: Extracting structural features...")
+    print("Step 3: Extracting structural features...")
     degree = nx.degree_centrality(G)      
     pagerank = nx.pagerank(G)            
     clustering = nx.clustering(G)        
@@ -26,7 +44,7 @@ def extract_features(G):
     return features
 
 def train_influence_model(df):
-    print("Step 3: Training Model to Predict Club Affiliation...")
+    print("Step 4: Training Model to Predict Club Affiliation...")
     
     X = df[['degree', 'pagerank', 'clustering']]
     y = df['target']
@@ -43,5 +61,6 @@ def train_influence_model(df):
 
 if __name__ == "__main__":
     graph = load_data()
+    analyze_topology(graph)
     features_df = extract_features(graph)
     model = train_influence_model(features_df)
