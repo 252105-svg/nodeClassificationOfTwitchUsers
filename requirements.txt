@@ -1,3 +1,6 @@
 networkx
 pandas
-scikit-learn 
+scikit-learn
+matplotlib
+seaborn
+numpy
